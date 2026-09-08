@@ -3,19 +3,6 @@ FROM node:20
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-      git \
-      curl \
-      ca-certificates \
-      unzip \
-      jq \
-      less \
-      procps \
-      uuid-runtime \
-      sqlite3 \
- && apt-get clean && rm -rf /var/lib/apt/lists/*
-
 ARG BUN_VERSION=1.3.12
 ENV BUN_INSTALL="/usr/local/bun"
 RUN curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}" \
@@ -53,15 +40,11 @@ COPY --chown=node:node docker/claude-mem/entrypoint.sh /usr/local/bin/claude-mem
 RUN chmod +x /usr/local/bin/claude-mem-entrypoint
 
 USER node
-WORKDIR /home/node
-
-# Phase 10 — server-beta runtime is the only foregrounded process. The legacy
 # worker binaries remain available for tooling but are NEVER spawned by the
 # entrypoint. Mode selection happens via CLAUDE_MEM_CONTAINER_MODE
 # (server | worker | shell). `docker run ... bash` works because shell mode
 # falls through to "$@".
 ENV CLAUDE_MEM_CONTAINER_MODE=server
-ENV CLAUDE_MEM_RUNTIME=server-beta
 
 ENTRYPOINT ["/usr/local/bin/claude-mem-entrypoint"]
 CMD []
