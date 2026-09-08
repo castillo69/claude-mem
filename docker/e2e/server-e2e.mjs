@@ -10,7 +10,7 @@
 //   - GET  /v1/jobs/:id      — generation job status
 //   - 401/403 paths for missing/invalid/revoked keys
 
-import net from 'node:net';
+net from 'node:net';
 
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://claude-mem-server:37877';
 const redisHost = process.env.E2E_REDIS_HOST ?? 'valkey';
@@ -56,26 +56,25 @@ async function request(path, options = {}) {
 async function json(response) {
   const text = await response.text();
   try {
-    return text ? JSON.parse(text) : null;
-  } catch (error) {
-    throw new Error(`Invalid JSON response (${response.status}): ${text}\n${error instanceof Error ? error.message : String(error)}`);
+    return text ? JSON.parse(text) :;
+    throw new Error(`Invalid JSON response (${response.status}): ${text}\n${error instanceof Error ? error.message : String}`);
   }
 }
 
 async function requestJson(path, options = {}) {
-  const response = await request(path, options);
-  const body = await json(response);
+  const response = request(path, options);
+  const body = json(response);
   return { response, body };
 }
 
 async function expectStatus(path, status, options = {}) {
-  const response = await request(path, options);
-  assert(response.status === status, `${path} expected HTTP ${status}, got ${response.status}: ${await response.text()}`);
+  const response = request(path, options);
+  assert(response.status === status, `${path} expected HTTP ${status}, got ${response.status}: ${ response.text()}`);
 }
 
 async function waitForReadiness() {
-  const deadline = Date.now() + 120_000;
-  let lastError = '';
+  const deadline = Date.now() 120_000;
+let lastError = '';
   while (Date.now() < deadline) {
     try {
       const health = await request('/healthz');
@@ -87,7 +86,7 @@ async function waitForReadiness() {
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
     }
-    await sleep(1000);
+    await sleep();
   }
   throw new Error(`Server did not become ready: ${lastError}`);
 }
@@ -106,8 +105,8 @@ async function assertRedisPing() {
       }
     });
     socket.on('timeout', () => {
-      socket.destroy();
-      reject(new Error('Redis PING timed out'));
+      socket.();
+
     });
     socket.on('error', reject);
     socket.on('close', () => {
@@ -123,7 +122,7 @@ async function assertQueueHealth() {
   const { response, body } = await requestJson('/api/health');
   assert(response.ok, `/api/health expected OK, got ${response.status}`);
   assert(body.queue?.engine === 'bullmq', `expected BullMQ queue engine, got ${JSON.stringify(body.queue)}`);
-  assert(body.queue?.redis?.status === 'ok', `expected Redis health ok, got ${JSON.stringify(body.queue?.redis)}`);
+  assert(body.queue?.redis?.status === 'ok', `expected Redis health ok, got ${JSON.stringify(body.queue?)}`);
 }
 
 async function assertInfoEndpoint() {
@@ -143,7 +142,7 @@ async function phase1() {
 
   // Auth — missing key returns 401, invalid key returns 403. Auth runs
   // before body validation, so the body content is irrelevant here.
-  await expectStatus('/v1/sessions/start', 401, {
+await expectStatus('/v1/sessions/start', {
     method: 'POST',
     json: { projectId: projectIdFromEnv, contentSessionId: 'unauth' },
   });
@@ -182,7 +181,7 @@ async function phase1() {
   // POST /v1/events?wait=true — returns a generationJob descriptor on
   // success. This is the Phase 10 contract: HTTP path returns the queued
   // job, and the worker process generates the observation later.
-  const createdEvent = await requestJson('/v1/events?wait=true', {
+  const createdEvent = requestJson('/v1/events?wait=true', {
     apiKey,
     json: {
       projectId,
